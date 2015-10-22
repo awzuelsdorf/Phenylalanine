@@ -2,7 +2,8 @@
 
 import selenium
 import selenium.webdriver
-from sys import exit, stderr, argv
+from sys import exit, stderr, argv, stdout
+from getpass import getpass
 
 def safeFindElementByID(driver, theID, failOnError=True):
     while True:
@@ -56,14 +57,17 @@ def enterCokeCode(driver, code):
         brandButtons = safeFindElementsByTagName(driver, "a", False)
         errorMessages = safeFindElementsByClassName(driver, "enterCodeErrorMessage", False)
         if errorMessages is not None:
-            stderr.write(code + " received error messages: \n" + str("\n".join([msg.text for msg in errorMessages])) + "\n")
-            foundBrand = True
-            break
+            errorMessage = "\n".join([msg.text for msg in errorMessages if len(msg.text.strip()) != 0])
+            if errorMessage != "":
+                stderr.write("{0} received error messages: \n\"{1}\"\n".format(code, errorMessage))
+                foundBrand = True
+                break
         for button in brandButtons:
             if button is not None and button.get_attribute("brand-id") is not None:
                 try:
                     button.click()
                     #print("Clicking button "+button.get_attribute("brand-id") + " succeeded")
+                    stdout.write(code + " entered successfully.\n")
                     foundBrand = True
                     break
                 except:
@@ -88,8 +92,8 @@ def logout(driver):
             pass
 
 def main():
-    if len(argv) != 3:
-        stderr.write("Usage: {0} <username> <password>\n".format(argv[0]))
+    if len(argv) != 2:
+        stderr.write("Usage: {0} <codesFile>\n".format(argv[0]))
         exit(-1)
 
     #Go to mycokerewards.com
@@ -103,8 +107,8 @@ def main():
     email = safeFindElementByID(driver, "capture_signIn_traditionalSignIn_emailAddress", False)
     password = safeFindElementByID(driver, "capture_signIn_traditionalSignIn_password", False)
 
-    email.send_keys(argv[1])
-    password.send_keys(argv[2])
+    email.send_keys(input("Please enter your email address: "))
+    password.send_keys(getpass("Please enter your password: "))
     signInButton = safeFindElementByID(driver, "capture_signIn_traditionalSignIn_signInButton", False)
     signInButton.click()
 
@@ -123,7 +127,7 @@ def main():
                     pass
                     #print(type(ex))
 
-    with open("codesFile.txt", 'r') as codeFile:
+    with open(argv[1], 'r') as codeFile:
         for code in codeFile:
             enterCokeCode(driver, code.strip())
 
