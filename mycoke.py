@@ -2,15 +2,14 @@
 
 import selenium
 import selenium.webdriver
-import time
-from sys import exit, stderr
+from sys import exit, stderr, argv
 
 def safeFindElementByID(driver, theID, failOnError=True):
     while True:
         try:
             return driver.find_element_by_id(theID)
         except:
-            stderr.write("Could not find {0} by id\n".format(theID))
+            #stderr.write("Could not find {0} by id\n".format(theID))
             if failOnError:
                 return None
 
@@ -19,7 +18,7 @@ def safeFindElementsByTagName(driver, tagName, failOnError=True):
         try:
             return driver.find_elements_by_tag_name(tagName)
         except:
-            stderr.write("Could not find {0} by tag name\n".format(tagName))
+            #stderr.write("Could not find {0} by tag name\n".format(tagName))
             if failOnError:
                 return None
 
@@ -28,7 +27,7 @@ def safeFindElementsByClassName(driver, className, failOnError=True):
         try:
             return driver.find_elements_by_class_name(className)
         except:
-            stderr.write("Could not find {0} by class name\n".format(className))
+            #stderr.write("Could not find {0} by class name\n".format(className))
             if failOnError:
                 return None
 
@@ -37,25 +36,75 @@ def safeFindElementByName(driver, theName, failOnError=True):
         try:
             return driver.find_element_by_name(theName)
         except:
-            stderr.write("Could not find {0} by name\n".format(theName))
+            #stderr.write("Could not find {0} by name\n".format(theName))
             if failOnError:
                 return None
 
+def enterCokeCode(driver, code):
+    #Enter coke codes.
+    codeField = safeFindElementByName(driver, "enterCodeField", False)
+    submitButton = safeFindElementsByClassName(driver, "enterCodeSubmit", False)
+
+    #print(submitButton)
+    codeField.clear()
+    codeField.send_keys(code)
+    submitButton[0].click()
+
+    foundBrand = False
+   
+    while not foundBrand: 
+        brandButtons = safeFindElementsByTagName(driver, "a", False)
+        errorMessages = safeFindElementsByClassName(driver, "enterCodeErrorMessage", False)
+        if errorMessages is not None:
+            stderr.write(code + " received error messages: \n" + str("\n".join([msg.text for msg in errorMessages])) + "\n")
+            foundBrand = True
+            break
+        for button in brandButtons:
+            if button is not None and button.get_attribute("brand-id") is not None:
+                try:
+                    button.click()
+                    #print("Clicking button "+button.get_attribute("brand-id") + " succeeded")
+                    foundBrand = True
+                    break
+                except:
+                    pass
+                    #print("Clicking button " + button.get_attribute("brand-id") + " failed")
+
+def logout(driver):
+    signOutButton = safeFindElementByID(driver, "h-profilePhoto-id", False)
+    signOutButton.click()
+
+    notClicked = True
+
+    while notClicked:
+        try:
+            realSignOutButton = safeFindElementByID(driver, "h-signOutLink", False)
+            if realSignOutButton is not None:
+                realSignOutButton.click()
+                notClicked = False
+            else:
+                print("Couldn't find the sign out button!")
+        except:
+            pass
+
 def main():
+    if len(argv) != 3:
+        stderr.write("Usage: {0} <username> <password>\n".format(argv[0]))
+        exit(-1)
+
     #Go to mycokerewards.com
     driver = selenium.webdriver.Firefox()
     driver.get("http://www.mycokerewards.com")
 
     #Sign in to mycokerewards.com
     signInButton = safeFindElementByID(driver, "h-signInJoinLink", False)
-
     signInButton.click()
 
     email = safeFindElementByID(driver, "capture_signIn_traditionalSignIn_emailAddress", False)
     password = safeFindElementByID(driver, "capture_signIn_traditionalSignIn_password", False)
 
-    email.send_keys("azuelsdorf16@gmail.com")
-    password.send_keys("y0L0v1ll3")
+    email.send_keys(argv[1])
+    password.send_keys(argv[2])
     signInButton = safeFindElementByID(driver, "capture_signIn_traditionalSignIn_signInButton", False)
     signInButton.click()
 
@@ -67,20 +116,18 @@ def main():
             for button in skipButtons:
                 try:
                     button.click()
-                    print("Yay it worked!")
+                    #print("Yay it worked!")
                     succeeded = True
                     break
                 except BaseException as ex:
-                    print(type(ex))
+                    pass
+                    #print(type(ex))
 
-    #Enter coke codes.
-    codeField = safeFindElementByName(driver, "enterCodeField", False)
-    submitButton = safeFindElementsByClassName(driver, "enterCodeSubmit", False)
+    with open("codesFile.txt", 'r') as codeFile:
+        for code in codeFile:
+            enterCokeCode(driver, code.strip())
 
-    print(submitButton)
-
-    codeField.send_keys("7jnv5xprpx5fwx")
-    submitButton[0].click()
+    logout(driver)
 
     input("Press enter to quit")
     driver.close()
