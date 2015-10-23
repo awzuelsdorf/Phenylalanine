@@ -64,7 +64,41 @@ def clickCloseButton(driver):
                 #print(e)
                 pass
 
-def enterCokeCode(driver, code):
+def enterCokeCardCode(driver, code):
+    #Enter coke codes.
+    codeField = safeFindElementByName(driver, "enterCodeField", False)
+    submitButton = safeFindElementsByClassName(driver, "enterCodeSubmit", False)
+
+    #print(submitButton)
+    codeField.clear()
+    codeField.send_keys(code)
+    submitButton[0].click()
+
+    message = getCodeStatusMessage(driver)
+
+    if "try again" in message.lower():
+        stderr.write(code + " received an error message: " + message)
+    else:
+        stdout.write(code + " received a success message: " + message)
+
+#Returns a 2-tuple. The first element is whether there
+#was an error (True) or not (False). The second is the
+#error or success message, whichever the case may be.
+def getCodeStatusMessage(driver):
+    while True:
+        errorMessages = safeFindElementsByClassName(driver, "enterCodeErrorMessage", True)
+        if errorMessages is not None:
+            errorMessage = "\n".join([msg.text for msg in errorMessages if len(msg.text.strip()) != 0])
+            if errorMessage != "":
+                return errorMessage
+
+        successMessages = safeFindElementsByClassName(driver, "enterCodeSuccessMessage", True)
+        if successMessages is not None:
+            successMessage = "\n".join([msg.text for msg in successMessages if len(msg.text.strip()) != 0])
+            if successMessage != "":
+                return successMessage
+
+def enterCokeCapCode(driver, code):
     #Enter coke codes.
     codeField = safeFindElementByName(driver, "enterCodeField", False)
     submitButton = safeFindElementsByClassName(driver, "enterCodeSubmit", False)
@@ -116,8 +150,8 @@ def logout(driver):
             pass
 
 def main():
-    if len(argv) != 2:
-        stderr.write("Usage: {0} <codesFile>\n".format(argv[0]))
+    if len(argv) != 3:
+        stderr.write("Usage: {0} <codes_caps_file> <codes_cardboard_file>\n".format(argv[0]))
         exit(-1)
 
     #Go to mycokerewards.com
@@ -154,9 +188,17 @@ def main():
                     pass
                     #print(type(ex))
 
-    with open(argv[1], 'r') as codeFile:
-        for code in codeFile:
-            enterCokeCode(driver, code.strip())
+    #Enter code from bottlecaps
+    with open(argv[1], 'r') as codeCapsFile:
+        for code in codeCapsFile:
+            enterCokeCapCode(driver, code.strip())
+
+    #Enter code from big cardboard boxes
+    with open(argv[2], 'r') as codeCardFile:
+        for code in codeCardFile:
+            enterCokeCardCode(driver, code.strip())
+
+    input("Press enter to logout.")
 
     logout(driver)
 
