@@ -27,8 +27,15 @@ def safeFindElementsByClassName(driver, className, failOnError=True):
     while True:
         try:
             return driver.find_elements_by_class_name(className)
-        except:
-            #stderr.write("Could not find {0} by class name\n".format(className))
+        except BaseException as e:
+            if failOnError:
+                return None
+
+def safeFindElementsByXPath(driver, theXPath, failOnError=True):
+    while True:
+        try:
+            return driver.find_elements_by_xpath(theXPath)
+        except BaseException as e:
             if failOnError:
                 return None
 
@@ -40,6 +47,23 @@ def safeFindElementByName(driver, theName, failOnError=True):
             #stderr.write("Could not find {0} by name\n".format(theName))
             if failOnError:
                 return None
+
+def clickCloseButton(driver):
+    notClicked = True
+
+    while notClicked:
+        closeButtons = safeFindElementsByXPath(driver, "//a[@class='enterCodeSuccessClose enterCodeToolTipClose']", False)
+
+        #stdout.write("Found {0} button(s)\n".format(len(closeButtons)))
+        for closeButton in closeButtons:
+            try:
+                closeButton.click()
+                #stdout.write("Clicked close button\n")
+                notClicked = False
+                break
+            except BaseException as e:
+                #print(e)
+                pass
 
 def enterCokeCode(driver, code):
     #Enter coke codes.
@@ -68,6 +92,7 @@ def enterCokeCode(driver, code):
                     button.click()
                     #print("Clicking button "+button.get_attribute("brand-id") + " succeeded")
                     stdout.write(code + " entered successfully.\n")
+                    clickCloseButton(driver)
                     foundBrand = True
                     break
                 except:
@@ -87,7 +112,7 @@ def logout(driver):
                 realSignOutButton.click()
                 notClicked = False
             else:
-                print("Couldn't find the sign out button!")
+                stderr.write("Couldn't find the sign out button!\n")
         except:
             pass
 
