@@ -3,7 +3,6 @@
 import selenium
 import selenium.webdriver
 from sys import exit, stderr, argv, stdout
-from getpass import getpass
 
 def safeFindElementByID(driver, theID, failOnError=True):
     while True:
@@ -133,7 +132,10 @@ def main():
     password = safeFindElementByID(driver, "capture_signIn_traditionalSignIn_password", False)
 
     email.send_keys(input("Please enter your email address: "))
-    password.send_keys(getpass("Please enter your password: "))
+    password.send_keys(input("Please enter your password: ")) #Cannot use
+    #getpass because I need to enter password by sending data to this
+    #program from a file
+
     signInButton = safeFindElementByID(driver, "capture_signIn_traditionalSignIn_signInButton", False)
     signInButton.click()
 
@@ -159,6 +161,7 @@ def main():
     logout(driver)
 
     input("Press enter to quit")
+    print()
     driver.close()
 
 if __name__ == "__main__":
