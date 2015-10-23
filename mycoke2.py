@@ -77,9 +77,9 @@ def enterCokeCardCode(driver, code):
     message = getCodeStatusMessage(driver)
 
     if "try again" in message.lower():
-        stderr.write(code + " received an error message: " + message)
+        stderr.write(code + " received an error message: " + message + "\n")
     else:
-        stdout.write(code + " received a success message: " + message)
+        stdout.write(code + " received a success message: " + message + "\n")
 
 #Returns a 2-tuple. The first element is whether there
 #was an error (True) or not (False). The second is the
